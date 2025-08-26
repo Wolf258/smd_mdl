@@ -1,7 +1,7 @@
 import process from 'node:process';
 import chalk from 'chalk';
-import {askQuestion} from './readuserinput.ts'
-import {closeReadline} from './readuserinput.ts'
+import {askQuestion} from './managers/readuserinput.ts'
+import {closeReadline} from './managers/readuserinput.ts'
 
 
 const colors = {
@@ -33,6 +33,11 @@ export async function WelcomeMessage(): Promise<void | {confirmation: boolean}> 
     
   case 'n':
     console.log(colors.red('Conversion Cancelled'))
+    closeReadline();
+    return {confirmation:false};
+
+  case 'x':
+    console.log(colors.yellow('Exiting the application...'));
     closeReadline();
     return {confirmation:false};
 

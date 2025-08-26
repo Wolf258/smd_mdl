@@ -1,6 +1,5 @@
 import chalk from 'chalk';
-import {askQuestion} from './readuserinput.ts'
-import {closeReadline} from './readuserinput.ts'
+
 
 
 const colors = {
