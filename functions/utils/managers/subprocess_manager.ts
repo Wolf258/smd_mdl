@@ -1,6 +1,26 @@
 // manager.ts
 import { spawn } from 'child_process';
 import path from 'path';
+import chalk from 'chalk';
+
+// Colores para la salida en consola
+const colors = {
+    red: chalk.red,
+    green: chalk.green,
+    yellow: chalk.yellow,
+    blue: chalk.blue,
+    magenta: chalk.magenta,
+    cyan: chalk.cyan,
+    white: chalk.white,
+    gray: chalk.gray,
+    black: chalk.black
+};
+
+
+
+
+
+
 
 // Define las rutas a los scripts de Python
 const material_obtainer = path.join(__dirname, '../../../scripts/material_obtainer.py');
