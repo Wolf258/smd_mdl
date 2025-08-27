@@ -17,14 +17,13 @@ const colors = {
 };
 
 
-export async function DetectPlatform(): Promise<void | {platform: {confirmation_platform: boolean, platform_user: string}}> {
+export async function DetectPlatform(): Promise<void | {platform: {confirmation_platform: boolean, platform_user: string}} | {break: boolean}> {
+  if (typeof process !== 'undefined' && process.platform) {
+    const platform = process.platform;
+    console.log(`Sistema operativo (Node.js): ${platform}`); // Ejemplo: 'win32', 'darwin', 'linux'
 
-   if (typeof process !== 'undefined' && process.platform) {
-  const platform = process.platform;
-  console.log(`Sistema operativo (Node.js): ${platform}`); // Ejemplo: 'win32', 'darwin', 'linux'
-
-  if (platform.startsWith('win')) {
-    askQuestion('¿Are you using Windows? (y/n) To Abort => (x)').then(answer => {
+    if (platform.startsWith('win')) {
+      const answer = await askQuestion('¿Are you using Windows? (y/n) To Abort => (x)');
       switch(answer.toLowerCase()){
         case 'y':
           console.log(colors.green('Windows detected'));
@@ -32,18 +31,17 @@ export async function DetectPlatform(): Promise<void | {platform: {confirmation_
         case 'n':
           console.log(colors.red('Platform not supported cannot continue'));
           closeReadline();
-          return;
+          return {platform: {confirmation_platform: false , platform_user: ''}};
         case 'x':
           console.log(colors.yellow('Exiting the application...'));
           closeReadline();
-          return;
+          return {platform: {confirmation_platform: false , platform_user: ''}};
         default:
           console.log(colors.red('Invalid option. Please enter y or n.'));
           return DetectPlatform();
       }
-    });
-  } else if (platform === 'linux') {
-    askQuestion('¿Are you usando Linux? (y/n). To Abort => (x)').then(answer => {
+    } else if (platform === 'linux') {
+      const answer = await askQuestion('¿Are you using Linux? (y/n). To Abort => (x)');
       switch(answer.toLowerCase()){
         case 'y':
           console.log(colors.green('Linux detected'));
@@ -51,21 +49,20 @@ export async function DetectPlatform(): Promise<void | {platform: {confirmation_
         case 'n':
           console.log(colors.red('Platform not supported cannot continue'));
           closeReadline();
-          return;
+          return {break: true};
         case 'x':
           console.log(colors.yellow('Exiting the application...'));
           closeReadline();
-          return;
+          return {platform: {confirmation_platform: false , platform_user: ''}};
         default:
           console.log(colors.red('Invalid option. Please enter y or n.'));
           return DetectPlatform();
       }
-    });
+    }
+  } else {
+    console.log('Platform not supported cannot continue');
+    closeReadline();
+    return {platform: {confirmation_platform: false , platform_user: ''}};
   }
-} else {
-  console.log('Platform not supported cannot continue');
-  closeReadline();
-  return;
-}
 }
 

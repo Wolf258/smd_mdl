@@ -29,9 +29,8 @@ const fbx2smd = path.join(__dirname, '../../../scripts/fbx2smd.py');
 
 
 
-
-export const manager = async () => {
-  console.log('✨ Iniciando el proceso...');
+export async function subprocess_manager(): Promise<void> {
+  console.log(colors.green('Starting the conversion...'));
 
   // 1. Iniciar material_obtainer.py
   const child1 = spawn('blender', ['--background', '--python', material_obtainer]);
@@ -69,5 +68,3 @@ export const manager = async () => {
     console.log(`funcion1.py ha terminado con código ${code}`);
   });
 };
-
-manager();

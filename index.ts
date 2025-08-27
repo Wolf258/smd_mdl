@@ -5,7 +5,7 @@ import chalk from "chalk";
 import {runPipeline} from './functions/utils/managers/manager.ts'
 import { WelcomeMessage } from './functions/utils/welcome_mesage.ts';
 import { DetectPlatform } from './functions/utils/detect_platform.ts';
-import { manager } from './functions/utils/managers/subprocess_manager.ts';
+import { subprocess_manager } from './functions/utils/managers/subprocess_manager.ts';
  
 const colors = {
     red: chalk.red,
@@ -24,20 +24,18 @@ dotenv.config({path: '/.env'});
 
 var data = {
    confirmation: false,
-   platform: {confirmation_platform: false , platform_user: ''},
+   platform: {confirmation_platform: null , platform_user: ''},
+   break: false,
    fbx:'',
    materials: [],
    textures: [],
 }
 
 
-
-
-
 // Tipo de cada tarea: recibe un input y devuelve un output (Promise porque son async)
 type AsyncTask<I, O> = (input: I) => Promise<O>;
 
 (async () => {
-  const result = await runPipeline(data, [WelcomeMessage, DetectPlatform, manager]);
-  console.log("🎉 Resultado final:", result);
+  const result = await runPipeline(data, [WelcomeMessage, DetectPlatform,subprocess_manager]);
+  console.log("Resultado final:", result);
 })();
