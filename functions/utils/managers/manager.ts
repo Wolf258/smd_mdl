@@ -20,7 +20,7 @@ type AsyncTask<I, O> = (input: I) => Promise<O>;
 export async function runPipeline<T>(initialValue: T, tasks: AsyncTask<any, any>[]) {
   let result: any = initialValue;
   for (const task of tasks) {
-    result = await task(result); // The 'await' here is key
+    result = await task(result); 
 
     if (result && result.break) {
       console.log(colors.yellow('Pipeline interrupted.'));
