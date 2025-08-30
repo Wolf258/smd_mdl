@@ -29,7 +29,7 @@ const fbx2smd = path.join(__dirname, '../../../scripts/fbx2smd.py');
 
 
 
-export async function subprocess_manager(): Promise<void> {
+export async function subprocess_manager(fileslist): Promise<void> {
   console.log(colors.green('Starting the conversion...'));
 
   // 1. Iniciar material_obtainer.py

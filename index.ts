@@ -24,13 +24,15 @@ const colors = {
     black: chalk.black
 };
 
-const path_files_list_json = process.env.path_files_list_json;
+const path_files_list_json = process.env.path_files_list_json ?? '';
 
 var data = {
    confirmation: false,
    platform: {confirmation_platform: null , platform_user: ''},
    break: false,
-   filesList_jsonpath: './resources/temp/file_list.json'
+   fileslist: '',
+   
+
 }
 
 
@@ -38,6 +40,6 @@ var data = {
 type AsyncTask<I, O> = (input: I) => Promise<O>;
 
 (async () => {
-  const result = await runPipeline(data, [WelcomeMessage,DetectPlatform,fileLister(path_files_list_json)]);
+  const result = await runPipeline(data, [WelcomeMessage,DetectPlatform,fileLister(path_files_list_json),]);
   console.log("Resultado final:", result);
 })();
