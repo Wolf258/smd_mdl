@@ -26,12 +26,12 @@ const colors = {
 
 const path_files_list_json = process.env.path_files_list_json ?? '';
 
+// Las texturas estaran en formato json en resources/temp
 var data = {
    confirmation: false,
    platform: {confirmation_platform: null , platform_user: ''},
    break: false,
    fileslist: '',
-   
 
 }
 
@@ -40,6 +40,8 @@ var data = {
 type AsyncTask<I, O> = (input: I) => Promise<O>;
 
 (async () => {
-  const result = await runPipeline(data, [WelcomeMessage,DetectPlatform,fileLister(path_files_list_json),]);
+  const result = await runPipeline(data, [WelcomeMessage,DetectPlatform,fileLister(path_files_list_json),subprocess_manager]);
   console.log("Resultado final:", result);
+  console.log(data.fileslist);
 })();
+

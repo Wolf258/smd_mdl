@@ -35,7 +35,7 @@ export function fileLister(directory: string) {
                         console.log(colors.blue(` - ${file}`));
                     });
                     // Exportamos los nombres de los archivos en json.
-                    fs.writeFileSync(path.resolve(filesPath, 'file_list.json'), JSON.stringify(files, null, 2));
+                    fs.writeFileSync(path.resolve(filesPath, '../temp/file_list.json'), JSON.stringify(files, null, 2));
                     // Merge fileslist into input and return
                     resolve({...input, fileslist: files as string[]});
                 }
