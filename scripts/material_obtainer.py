@@ -69,5 +69,5 @@ OUTPUT_JSON = os.path.join(SCRIPT_material_obtainer_DIR, "../resources/temp/mate
 with open(OUTPUT_JSON, "w") as f:
     json.dump(all_materials, f, indent=4)
 
-print(f"data: {OUTPUT_JSON}")
+print(f"Materials: {OUTPUT_JSON}")
 print(json.dumps(all_materials, indent=4))

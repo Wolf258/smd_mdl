@@ -1,17 +1,20 @@
 import pyassimp
 import os
 import sys
-from os.path import join
+import json
+from os.path import join, dirname, abspath
 from dotenv import load_dotenv
 
 # === Configuración ===
-DEFAULT_INPUT = "../resources/models/Christmas_Hat.fbx"
-DEFAULT_OUTPUT = "../resources/models/Christmas_Hat.smd"
+SCRIPT_DIR = dirname(abspath(__file__))
 
-SCRIPT_DIR = os.path.dirname(os.path.abspath(__file__))
+JSON_LIST = join(SCRIPT_DIR, "../resources/temp/file_list.json")
+INPUT_DIR = join(SCRIPT_DIR, "../resources/models/")
+OUTPUT_DIR = join(SCRIPT_DIR, "../resources/exported/models/")
+
 load_dotenv(join(SCRIPT_DIR, '../.env'))
 
-# Asume que 'path_models_fbx' está configurado en tu .env
+# Asume que 'path_models_fbx' está configurado en tu .env (opcional)
 path_models_fbx = os.getenv('path_models_fbx')
 
 # ===============================
@@ -24,40 +27,38 @@ def export_smd(scene, output_path):
     with open(output_path, "w") as f:
         f.write("version 1\n")
 
-        # Escribimos el nodo raíz
+        # Nodos
         f.write("nodes\n")
         f.write(" 0 \"root\" -1\n")
         f.write("end\n")
 
-        # Escribimos el esqueleto (un solo hueso para el modelo estático)
+        # Esqueleto (único hueso raíz)
         f.write("skeleton\n")
         f.write(" time 0\n")
         f.write(" 0 0.0 0.0 0.0 0 0 0\n")
         f.write("end\n")
 
-        # Escribimos los triángulos del modelo
+        # Triángulos
         f.write("triangles\n")
 
-        # Iteramos sobre cada malla en la escena
         for mesh in scene.meshes:
-            # Dado que hemos eliminado la lógica de materiales,
-            # usamos un nombre de textura por defecto.
             mat_texture_name = "default_texture"
-            
+
             for face in mesh.faces:
-                # Aseguramos que la cara sea un triángulo
                 if len(face) != 3:
                     continue
 
-                # Escribimos el nombre de la textura para cada triángulo
                 f.write(f"{mat_texture_name}\n")
                 for idx in face:
                     v = mesh.vertices[idx]
                     n = mesh.normals[idx] if mesh.normals.any() else [0.0, 0.0, 1.0]
                     uv = [0.0, 0.0]
-                    
-                    # Verificamos si hay coordenadas de textura
-                    if mesh.texturecoords is not None and len(mesh.texturecoords) > 0 and len(mesh.texturecoords[0]) > idx:
+
+                    if (
+                        mesh.texturecoords is not None
+                        and len(mesh.texturecoords) > 0
+                        and len(mesh.texturecoords[0]) > idx
+                    ):
                         uv = mesh.texturecoords[0][idx][:2]
 
                     f.write(f" 0 {v[0]} {v[1]} {v[2]} {n[0]} {n[1]} {n[2]} {uv[0]} {uv[1]}\n")
@@ -77,41 +78,76 @@ def convert_to_smd(input_path, output_path):
         scene = pyassimp.load(input_path)
     except Exception as e:
         print(f"[ERROR] No se pudo cargar el archivo: {e}")
-        return
+        return False
 
     print(f"[INFO] {len(scene.meshes)} mallas encontradas.")
 
-    export_smd(scene, output_path)
-    pyassimp.release(scene)
+    try:
+        export_smd(scene, output_path)
+        pyassimp.release(scene)
+    except Exception as e:
+        print(f"[ERROR] Falló la exportación: {e}")
+        return False
 
     print(f"[OK] Exportado a SMD: {output_path}")
+    return True
 
 
 # ===============================
-# Main
+# Main (Batch Processor)
 # ===============================
 if __name__ == "__main__":
-    if len(sys.argv) >= 3:
-        input_path = sys.argv[1]
-        output_path = sys.argv[2]
-    else:
-        # Si no se proporciona una ruta, usamos la predeterminada
-        input_path = DEFAULT_INPUT
-        output_path = DEFAULT_OUTPUT
+    # Comprobar que existe la lista de archivos
+    if not os.path.exists(JSON_LIST):
+        print(f"[ERROR] No se encontró la lista de archivos: {JSON_LIST}")
+        sys.exit(1)
 
-    # Aseguramos que la ruta de entrada sea la correcta
-    full_input_path = join(SCRIPT_DIR, input_path)
-    
-    # Comprobamos si la ruta de entrada existe antes de intentar cargarla
-    if not os.path.exists(full_input_path):
-        # Si la ruta no existe, intentamos usar la ruta del .env si está disponible
-        if path_models_fbx:
-            full_input_path = join(path_models_fbx, os.path.basename(full_input_path))
-            if not os.path.exists(full_input_path):
-                print(f"[ERROR] No existe el archivo {full_input_path}. Por favor, verifica la ruta.")
-                sys.exit(1)
-        else:
-            print(f"[ERROR] No existe el archivo {full_input_path} y la variable 'path_models_fbx' no está definida.")
+    with open(JSON_LIST, "r") as f:
+        try:
+            file_list = json.load(f)
+        except json.JSONDecodeError:
+            print(f"[ERROR] {JSON_LIST} no contiene un JSON válido")
             sys.exit(1)
 
-    convert_to_smd(full_input_path, output_path)
+    if not isinstance(file_list, list):
+        print(f"[ERROR] {JSON_LIST} debe contener una lista de nombres de archivos FBX")
+        sys.exit(1)
+
+    # Crear carpeta de salida si no existe
+    os.makedirs(OUTPUT_DIR, exist_ok=True)
+
+    # Listas de control
+    success_list = []
+    fail_list = []
+
+    # Procesar cada archivo FBX
+    for filename in file_list:
+        fbx_path = join(INPUT_DIR, filename)
+        if not os.path.exists(fbx_path):
+            if path_models_fbx:
+                fbx_path = join(path_models_fbx, filename)
+            if not os.path.exists(fbx_path):
+                print(f"[ERROR] No existe el archivo {fbx_path}. Saltando.")
+                fail_list.append(filename)
+                continue
+
+        smd_name = os.path.splitext(filename)[0] + ".smd"
+        smd_path = join(OUTPUT_DIR, smd_name)
+
+        if convert_to_smd(fbx_path, smd_path):
+            success_list.append(filename)
+        else:
+            fail_list.append(filename)
+
+    # ===============================
+    # Resumen final
+    # ===============================
+    print("\n========== RESUMEN ==========")
+    print(f"Total archivos: {len(file_list)}")
+    print(f"Éxitos: {len(success_list)}")
+    for f in success_list:
+        print(f"   - {f}")
+    print(f"Fallos: {len(fail_list)}")
+    for f in fail_list:
+        print(f"   - {f}")
+    print("=============================")

@@ -18,10 +18,6 @@ const colors = {
 
 
 
-
-
-
-
 // Define las rutas a los scripts de Python
 const material_obtainer = path.join(__dirname, '../../../scripts/material_obtainer.py');
 const fbx2smd = path.join(__dirname, '../../../scripts/fbx2smd.py');
@@ -39,25 +35,15 @@ export async function subprocess_manager(): Promise<void> {
     const message = data.toString().trim();
     console.log(`Datos recibidos de material_obtainer.py: ${message}`);
 
-    // Pasar el mensaje a fbx2smd.py
-    if (message.startsWith('Materials:')) {
-      const dataToSend = message.substring(10); // Elimina "Materials:"
+  });
 
-      // 2. Iniciar fbx2smd.py y enviarle los datos
-      const child2 = spawn('python', [fbx2smd]);
-      
-      // Pasar los datos a stdin de child2
-      child2.stdin.write(dataToSend + '\n');
-      child2.stdin.end();
+  // 2. inciar fbx2smd
+  const child2 = spawn('python', [fbx2smd]);
+  console.log('fbx2smd executed')
 
-      child2.stdout.on('data', (dataFromChild2) => {
-        console.log(`Datos recibidos de funcion2.py: ${dataFromChild2.toString().trim()}`);
-      });
-
-      child2.stderr.on('data', (error) => {
-        console.error(`Error de funcion2.py: ${error.toString()}`);
-      });
-    }
+  child2.stdout.on('data', (data) => {
+    const message = data.toString().trim();
+    console.log(`Datos recibidos de fbx2smd.py: ${message}`);
   });
 
   child1.stderr.on('data', (error) => {
