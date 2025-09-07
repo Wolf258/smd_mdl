@@ -1,9 +1,13 @@
+
 import pyassimp
 import os
 import sys
 import json
 from os.path import join, dirname, abspath
 from dotenv import load_dotenv
+
+# Importa la función de normalización desde el archivo separado
+from normalize import normalize_model  # Ajusta el import según la ubicación de normalize.py
 
 # === Configuración ===
 SCRIPT_DIR = dirname(abspath(__file__))
@@ -12,17 +16,20 @@ JSON_LIST = join(SCRIPT_DIR, "../resources/temp/file_list.json")
 INPUT_DIR = join(SCRIPT_DIR, "../resources/models/")
 OUTPUT_DIR = join(SCRIPT_DIR, "../resources/exported/models/")
 
+# Ruta al modelo de referencia (ajusta esto a tu archivo FBX de referencia)
+REF_PATH = join(SCRIPT_DIR, "../resources/ref_model/reference_model.fbx")  # Cambia esto a la ruta real
+
 load_dotenv(join(SCRIPT_DIR, '../.env'))
 
 # Asume que 'path_models_fbx' está configurado en tu .env (opcional)
 path_models_fbx = os.getenv('path_models_fbx')
 
 # ===============================
-# Exportador a SMD
+# Exportador a SMD (modificado para aplicar escala)
 # ===============================
-def export_smd(scene, output_path):
+def export_smd(scene, output_path, scale_factor=1.0):
     """
-    Exporta la escena de pyassimp a un archivo SMD, ignorando los materiales.
+    Exporta la escena de pyassimp a un archivo SMD, ignorando los materiales y aplicando escala uniforme a los vértices.
     """
     with open(output_path, "w") as f:
         f.write("version 1\n")
@@ -51,6 +58,8 @@ def export_smd(scene, output_path):
                 f.write(f"{mat_texture_name}\n")
                 for idx in face:
                     v = mesh.vertices[idx]
+                    # Aplicar escala a los vértices
+                    v_scaled = [v[0] * scale_factor, v[1] * scale_factor, v[2] * scale_factor]
                     n = mesh.normals[idx] if mesh.normals.any() else [0.0, 0.0, 1.0]
                     uv = [0.0, 0.0]
 
@@ -61,17 +70,16 @@ def export_smd(scene, output_path):
                     ):
                         uv = mesh.texturecoords[0][idx][:2]
 
-                    f.write(f" 0 {v[0]} {v[1]} {v[2]} {n[0]} {n[1]} {n[2]} {uv[0]} {uv[1]}\n")
+                    f.write(f" 0 {v_scaled[0]} {v_scaled[1]} {v_scaled[2]} {n[0]} {n[1]} {n[2]} {uv[0]} {uv[1]}\n")
 
         f.write("end\n")
 
-
 # ===============================
-# Conversión
+# Conversión (modificada para recibir scale_factor)
 # ===============================
-def convert_to_smd(input_path, output_path):
+def convert_to_smd(input_path, output_path, scale_factor=1.0):
     """
-    Carga el modelo y lo exporta a SMD.
+    Carga el modelo y lo exporta a SMD, aplicando el factor de escala.
     """
     print(f"[INFO] Cargando modelo: {input_path}")
     try:
@@ -83,7 +91,7 @@ def convert_to_smd(input_path, output_path):
     print(f"[INFO] {len(scene.meshes)} mallas encontradas.")
 
     try:
-        export_smd(scene, output_path)
+        export_smd(scene, output_path, scale_factor)
         pyassimp.release(scene)
     except Exception as e:
         print(f"[ERROR] Falló la exportación: {e}")
@@ -92,9 +100,8 @@ def convert_to_smd(input_path, output_path):
     print(f"[OK] Exportado a SMD: {output_path}")
     return True
 
-
 # ===============================
-# Main (Batch Processor)
+# Main (Batch Processor) - Modificado para normalizar antes de convertir
 # ===============================
 if __name__ == "__main__":
     # Comprobar que existe la lista de archivos
@@ -134,7 +141,15 @@ if __name__ == "__main__":
         smd_name = os.path.splitext(filename)[0] + ".smd"
         smd_path = join(OUTPUT_DIR, smd_name)
 
-        if convert_to_smd(fbx_path, smd_path):
+        # Normalizar: calcular factor de escala
+        try:
+            scale_factor = normalize_model(fbx_path, REF_PATH)
+        except Exception as e:
+            print(f"[ERROR] Falló la normalización para {filename}: {e}. Usando factor 1.0 por defecto.")
+            scale_factor = 1.0
+
+        # Convertir aplicando el factor
+        if convert_to_smd(fbx_path, smd_path, scale_factor):
             success_list.append(filename)
         else:
             fail_list.append(filename)

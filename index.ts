@@ -28,8 +28,7 @@ const path_files_list_json = process.env.path_files_list_json ?? '';
 
 // Las texturas estaran en formato json en resources/temp
 var data = {
-   confirmation: false,
-   platform: {confirmation_platform: null , platform_user: ''},
+   platform: {platform_user: ''},
    break: false,
    fileslist: '',
 

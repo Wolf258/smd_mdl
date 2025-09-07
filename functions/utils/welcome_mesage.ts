@@ -20,7 +20,7 @@ const colors = {
 
 
 
-export async function WelcomeMessage(): Promise<void | {confirmation: boolean}> {
+export async function WelcomeMessage(): Promise<void | {break: boolean}> {
 
   console.log(colors.cyan('Welcome to the fbx model to SMD converter!'));
   const question = await askQuestion(colors.green('Do you want to start the conversion process? yes / no [y/n]'));
@@ -29,17 +29,17 @@ export async function WelcomeMessage(): Promise<void | {confirmation: boolean}> 
 
   case 'y':
     console.log(colors.green('Starting conversion process...'));
-    return {confirmation:true};
-    
+    return {break: false};
+
   case 'n':
     console.log(colors.red('Conversion Cancelled'))
     closeReadline();
-    return {confirmation:false};
+    return {break: true};
 
   case 'x':
     console.log(colors.yellow('Exiting the application...'));
     closeReadline();
-    return {confirmation:false};
+    return {break: true};
 
    default:
     console.log(colors.red('Invalid option. Please enter yes / no [y/n].'));
